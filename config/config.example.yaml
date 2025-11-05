@@ -1,0 +1,59 @@
+# Autotrader Configuration Example
+# Copy this file to config.yaml and update with your settings
+
+# Alpaca API Configuration
+alpaca:
+  api_key: "your_api_key_here"
+  secret_key: "your_secret_key_here"
+  base_url: "https://paper-api.alpaca.markets"  # Paper trading
+  # base_url: "https://api.alpaca.markets"  # Live trading
+
+# Trading Configuration
+trading:
+  mode: "paper"  # paper or live
+  symbols:
+    - "SPY"    # S&P 500 ETF
+    - "AAPL"   # Apple
+    - "MSFT"   # Microsoft
+    - "BTC/USD"  # Bitcoin
+  check_interval: 60  # seconds between strategy checks
+
+# Risk Management
+risk:
+  max_position_size: 0.1      # Max 10% per position
+  max_portfolio_risk: 0.02    # Max 2% risk per trade
+  stop_loss_pct: 0.05         # 5% stop loss
+  take_profit_pct: 0.10       # 10% take profit
+  max_daily_loss: 0.05        # Max 5% daily loss
+  max_drawdown: 0.20          # Max 20% drawdown
+
+# Strategy Configuration
+strategies:
+  moving_average:
+    short_window: 20
+    long_window: 50
+    ma_type: "sma"  # sma or ema
+
+  rsi:
+    period: 14
+    oversold: 30
+    overbought: 70
+
+# Backtesting Configuration
+backtesting:
+  initial_capital: 100000
+  commission: 0.001  # 0.1%
+  slippage: 0.0005   # 0.05%
+
+# Logging
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  file: "logs/autotrader.log"
+
+# API Server Configuration
+api:
+  host: "0.0.0.0"
+  port: 8000
+  cors_origins:
+    - "http://localhost:3000"
+    - "http://localhost:5173"
