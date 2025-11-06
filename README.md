@@ -13,7 +13,12 @@ Ein vollständiges automatisiertes Trading-System mit Web-Dashboard, das sowohl 
 - **Mehrere Strategien**:
   - Moving Average Crossover (SMA/EMA)
   - RSI (Relative Strength Index)
+  - MACD (Moving Average Convergence Divergence)
+  - Bollinger Bands
   - Einfach erweiterbar für eigene Strategien
+- **Parameter Optimization**: Grid Search & Genetic Algorithms
+- **Notifications**: Telegram & Email Alerts
+- **Advanced Analytics**: 30+ Performance Metrics, Monte Carlo Simulation
 
 ## Architektur
 
@@ -102,6 +107,93 @@ python examples/backtest_example.py
 **Paper Trading starten:**
 ```bash
 python examples/paper_trading_example.py
+```
+
+## 🆕 Neue Features (v0.2.0)
+
+### Zusätzliche Strategien
+
+#### MACD Strategy
+```python
+from src.strategies.macd_strategy import MACDStrategy
+
+strategy = MACDStrategy(
+    fast_period=12,
+    slow_period=26,
+    signal_period=9
+)
+```
+
+#### Bollinger Bands
+```python
+from src.strategies.bollinger_bands import BollingerBandsStrategy
+
+strategy = BollingerBandsStrategy(
+    period=20,
+    num_std=2.0
+)
+```
+
+### Parameter Optimization
+
+**Grid Search:**
+```python
+from src.optimization import ParameterOptimizer
+
+optimizer = ParameterOptimizer(strategy_class, data, metric='sharpe_ratio')
+param_grid = {
+    'short_window': [10, 20, 30],
+    'long_window': [40, 50, 60]
+}
+best_params, results = optimizer.grid_search(param_grid)
+```
+
+**Genetic Algorithm:**
+```python
+from src.optimization import GeneticOptimizer
+
+optimizer = GeneticOptimizer(
+    strategy_class, data,
+    param_bounds={'fast_period': (5, 20), 'slow_period': (20, 50)},
+    generations=20
+)
+best_params, results = optimizer.optimize()
+```
+
+### Telegram Notifications
+
+```python
+from src.notifications import NotificationManager, TelegramNotifier
+
+manager = NotificationManager()
+telegram = TelegramNotifier(bot_token='YOUR_TOKEN', chat_ids=['YOUR_CHAT_ID'])
+manager.add_channel(telegram)
+
+await manager.notify_trade(symbol='SPY', side='buy', quantity=10, price=450.0)
+```
+
+### Advanced Analytics
+
+```python
+from src.analytics import PerformanceAnalyzer, MonteCarloSimulation
+
+analyzer = PerformanceAnalyzer(trades, equity_curve)
+report = analyzer.generate_report()
+print(report)
+
+mc = MonteCarloSimulation(returns, n_simulations=1000)
+mc_results = mc.run(n_periods=252)
+```
+
+### Trailing Stop-Loss
+
+```python
+from src.trading.risk_manager import RiskManager
+
+risk_manager = RiskManager(
+    trailing_stop_pct=0.03,
+    use_trailing_stop=True
+)
 ```
 
 ## Strategien

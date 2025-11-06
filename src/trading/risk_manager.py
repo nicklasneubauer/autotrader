@@ -20,7 +20,9 @@ class RiskManager:
         stop_loss_pct: float = 0.05,         # 5% stop loss
         take_profit_pct: float = 0.10,       # 10% take profit
         max_daily_loss: float = 0.05,        # Max 5% daily loss
-        max_drawdown: float = 0.20           # Max 20% drawdown
+        max_drawdown: float = 0.20,          # Max 20% drawdown
+        trailing_stop_pct: float = 0.03,     # 3% trailing stop
+        use_trailing_stop: bool = True       # Enable trailing stop
     ):
         """
         Initialize risk manager
@@ -32,6 +34,8 @@ class RiskManager:
             take_profit_pct: Take profit percentage
             max_daily_loss: Maximum daily loss as fraction of portfolio
             max_drawdown: Maximum drawdown as fraction of portfolio
+            trailing_stop_pct: Trailing stop percentage
+            use_trailing_stop: Enable trailing stop-loss
         """
         self.max_position_size = max_position_size
         self.max_portfolio_risk = max_portfolio_risk
@@ -39,10 +43,15 @@ class RiskManager:
         self.take_profit_pct = take_profit_pct
         self.max_daily_loss = max_daily_loss
         self.max_drawdown = max_drawdown
+        self.trailing_stop_pct = trailing_stop_pct
+        self.use_trailing_stop = use_trailing_stop
 
         self.daily_pnl = 0.0
         self.daily_pnl_date = datetime.now().date()
         self.peak_portfolio_value = 0.0
+
+        # Trailing stop tracking: {symbol: {'highest_price': float, 'trailing_stop': float}}
+        self.trailing_stops: Dict[str, Dict[str, float]] = {}
 
         self.logger = logging.getLogger(__name__)
 
