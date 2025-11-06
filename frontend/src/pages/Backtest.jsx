@@ -50,6 +50,19 @@ function Backtest() {
         oversold: 30,
         overbought: 70,
       })
+    } else if (type === 'macd') {
+      setParameters({
+        fast_period: 12,
+        slow_period: 26,
+        signal_period: 9,
+        threshold: 0,
+      })
+    } else if (type === 'bollinger_bands') {
+      setParameters({
+        period: 20,
+        num_std: 2.0,
+        ma_type: 'sma',
+      })
     }
   }
 

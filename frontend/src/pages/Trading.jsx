@@ -13,6 +13,7 @@ function Trading() {
     long_window: 50,
     ma_type: 'sma',
   })
+  const [notifications, setNotifications] = useState(true)
 
   const { data: botStatus } = useQuery({
     queryKey: ['botStatus'],
@@ -64,6 +65,19 @@ function Trading() {
         period: 14,
         oversold: 30,
         overbought: 70,
+      })
+    } else if (type === 'macd') {
+      setParameters({
+        fast_period: 12,
+        slow_period: 26,
+        signal_period: 9,
+        threshold: 0,
+      })
+    } else if (type === 'bollinger_bands') {
+      setParameters({
+        period: 20,
+        num_std: 2.0,
+        ma_type: 'sma',
       })
     }
   }
@@ -168,6 +182,8 @@ function Trading() {
               >
                 <option value="moving_average">Moving Average Crossover</option>
                 <option value="rsi">RSI Strategy</option>
+                <option value="macd">MACD Strategy</option>
+                <option value="bollinger_bands">Bollinger Bands</option>
               </select>
             </div>
 
@@ -196,6 +212,19 @@ function Trading() {
                 onChange={(e) => setCheckInterval(parseInt(e.target.value))}
                 className="mt-1 block w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               />
+            </div>
+
+            {/* Notifications Toggle */}
+            <div>
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={notifications}
+                  onChange={(e) => setNotifications(e.target.checked)}
+                  className="rounded bg-slate-700 border-slate-600 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="ml-2 text-sm text-gray-300">Enable Notifications (Telegram/Email)</span>
+              </label>
             </div>
 
             {/* Strategy Parameters */}
@@ -274,7 +303,80 @@ function Trading() {
                     />
                   </div>
                 </div>
-              )}
+              ) : strategyType === 'macd' ? (
+                <>
+                  <div>
+                    <label className="block text-sm text-gray-400">Fast Period</label>
+                    <input
+                      type="number"
+                      value={parameters.fast_period}
+                      onChange={(e) =>
+                        setParameters({ ...parameters, fast_period: parseInt(e.target.value) })
+                      }
+                      className="mt-1 block w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-400">Slow Period</label>
+                    <input
+                      type="number"
+                      value={parameters.slow_period}
+                      onChange={(e) =>
+                        setParameters({ ...parameters, slow_period: parseInt(e.target.value) })
+                      }
+                      className="mt-1 block w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-400">Signal Period</label>
+                    <input
+                      type="number"
+                      value={parameters.signal_period}
+                      onChange={(e) =>
+                        setParameters({ ...parameters, signal_period: parseInt(e.target.value) })
+                      }
+                      className="mt-1 block w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                </>
+              ) : strategyType === 'bollinger_bands' ? (
+                <>
+                  <div>
+                    <label className="block text-sm text-gray-400">Period</label>
+                    <input
+                      type="number"
+                      value={parameters.period}
+                      onChange={(e) =>
+                        setParameters({ ...parameters, period: parseInt(e.target.value) })
+                      }
+                      className="mt-1 block w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-400">Standard Deviations</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={parameters.num_std}
+                      onChange={(e) =>
+                        setParameters({ ...parameters, num_std: parseFloat(e.target.value) })
+                      }
+                      className="mt-1 block w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-400">MA Type</label>
+                    <select
+                      value={parameters.ma_type}
+                      onChange={(e) => setParameters({ ...parameters, ma_type: e.target.value })}
+                      className="mt-1 block w-full pl-3 pr-10 py-2 bg-slate-700 border-slate-600 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md"
+                    >
+                      <option value="sma">SMA (Simple)</option>
+                      <option value="ema">EMA (Exponential)</option>
+                    </select>
+                  </div>
+                </>
+              ) : null}
             </div>
           </div>
         </div>
