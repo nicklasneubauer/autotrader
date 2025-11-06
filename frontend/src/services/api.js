@@ -36,6 +36,24 @@ export const getBotStatus = () => api.get('/bot/status')
 export const getHistoricalData = (dataRequest) =>
   api.post('/data/historical', dataRequest)
 
+// Analytics endpoints
+export const getAnalytics = (timeframe = 'all') => api.get(`/analytics?timeframe=${timeframe}`)
+export const getTrades = (strategyFilter = 'all') => api.get(`/trades?strategy=${strategyFilter}`)
+export const getPortfolioHistory = (period = '7d') => api.get(`/portfolio/history?period=${period}`)
+export const getRecentActivity = (maxItems = 10) => api.get(`/activity/recent?max=${maxItems}`)
+
+// Strategy comparison endpoint
+export const compareStrategies = (comparisonData) => api.post('/strategies/compare', comparisonData)
+
+// Optimization endpoint
+export const optimizeStrategy = (optimizationData) => api.post('/strategies/optimize', optimizationData)
+
+// Watchlist endpoints
+export const getWatchlist = () => api.get('/watchlist')
+export const addToWatchlist = (symbol) => api.post('/watchlist', { symbol })
+export const removeFromWatchlist = (symbol) => api.delete(`/watchlist/${symbol}`)
+export const getQuote = (symbol) => api.get(`/quotes/${symbol}`)
+
 // WebSocket connection
 export const createWebSocket = () => {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'

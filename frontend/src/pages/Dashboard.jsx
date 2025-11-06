@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { getAccount, getPositions, getBotStatus, createWebSocket } from '../services/api'
+import { getAccount, getPositions, getBotStatus, createWebSocket, getPortfolioHistory } from '../services/api'
 import { TrendingUp, TrendingDown, DollarSign, Activity } from 'lucide-react'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts'
+import ActivityFeed from '../components/ActivityFeed'
 
 function Dashboard() {
   const [wsData, setWsData] = useState(null)
@@ -31,6 +33,15 @@ function Dashboard() {
       return response.data
     },
     refetchInterval: 5000,
+  })
+
+  const { data: portfolioHistory } = useQuery({
+    queryKey: ['portfolioHistory'],
+    queryFn: async () => {
+      const response = await getPortfolioHistory('7d')
+      return response.data
+    },
+    refetchInterval: 60000, // Refresh every minute
   })
 
   // WebSocket connection
@@ -109,6 +120,77 @@ function Dashboard() {
           color={totalPnL >= 0 ? 'green' : 'red'}
         />
       </div>
+
+      {/* Portfolio Performance Chart */}
+      {portfolioHistory && portfolioHistory.length > 0 && (
+        <div className="bg-slate-800 shadow rounded-lg p-6">
+          <h3 className="text-lg font-medium text-white mb-4">Portfolio Performance (7 Days)</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <AreaChart data={portfolioHistory}>
+              <defs>
+                <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <XAxis
+                dataKey="timestamp"
+                stroke="#9CA3AF"
+                tickFormatter={(value) => new Date(value).toLocaleDateString()}
+              />
+              <YAxis stroke="#9CA3AF" />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569' }}
+                labelStyle={{ color: '#e5e7eb' }}
+                labelFormatter={(value) => new Date(value).toLocaleString()}
+              />
+              <Area
+                type="monotone"
+                dataKey="portfolio_value"
+                stroke="#3b82f6"
+                fillOpacity={1}
+                fill="url(#colorValue)"
+                name="Portfolio Value"
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* P&L Chart */}
+      {portfolioHistory && portfolioHistory.length > 0 && (
+        <div className="bg-slate-800 shadow rounded-lg p-6">
+          <h3 className="text-lg font-medium text-white mb-4">Profit & Loss</h3>
+          <ResponsiveContainer width="100%" height={250}>
+            <LineChart data={portfolioHistory}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+              <XAxis
+                dataKey="timestamp"
+                stroke="#9CA3AF"
+                tickFormatter={(value) => new Date(value).toLocaleDateString()}
+              />
+              <YAxis stroke="#9CA3AF" />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569' }}
+                labelStyle={{ color: '#e5e7eb' }}
+                labelFormatter={(value) => new Date(value).toLocaleString()}
+              />
+              <Legend />
+              <Line
+                type="monotone"
+                dataKey="pnl"
+                stroke="#10b981"
+                strokeWidth={2}
+                name="P&L ($)"
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      {/* Activity Feed */}
+      <ActivityFeed maxItems={15} />
 
       {/* Positions */}
       <div className="bg-slate-800 shadow rounded-lg">

@@ -63,6 +63,45 @@ function Backtest() {
         num_std: 2.0,
         ma_type: 'sma',
       })
+    } else if (type === 'mean_reversion') {
+      setParameters({
+        lookback_period: 20,
+        entry_threshold: 2.0,
+        exit_threshold: 0.5,
+        use_zscore: true,
+      })
+    } else if (type === 'turtle_trading') {
+      setParameters({
+        entry_period: 20,
+        exit_period: 10,
+        atr_period: 20,
+        use_system_2: false,
+      })
+    } else if (type === 'pairs_trading') {
+      setParameters({
+        lookback_period: 20,
+        entry_threshold: 2.0,
+        exit_threshold: 0.5,
+        hedge_ratio_period: 60,
+      })
+    } else if (type === 'vwap') {
+      setParameters({
+        std_multiplier: 2.0,
+        lookback_period: 0,
+        use_bands: true,
+      })
+    } else if (type === 'ichimoku') {
+      setParameters({
+        tenkan_period: 9,
+        kijun_period: 26,
+        senkou_span_b_period: 52,
+      })
+    } else if (type === 'multi_strategy') {
+      setParameters({
+        strategies: ['moving_average', 'rsi', 'macd'],
+        weights: [0.4, 0.3, 0.3],
+        voting_method: 'weighted',
+      })
     }
   }
 
@@ -98,8 +137,20 @@ function Backtest() {
               onChange={(e) => handleStrategyChange(e.target.value)}
               className="mt-1 block w-full pl-3 pr-10 py-2 bg-slate-700 border-slate-600 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md"
             >
-              <option value="moving_average">Moving Average Crossover</option>
-              <option value="rsi">RSI Strategy</option>
+              <optgroup label="Basic Strategies">
+                <option value="moving_average">Moving Average Crossover</option>
+                <option value="rsi">RSI Strategy</option>
+                <option value="macd">MACD Strategy</option>
+                <option value="bollinger_bands">Bollinger Bands</option>
+              </optgroup>
+              <optgroup label="Professional Strategies">
+                <option value="mean_reversion">Mean Reversion (Renaissance Tech)</option>
+                <option value="turtle_trading">Turtle Trading System</option>
+                <option value="pairs_trading">Pairs Trading (Stat Arb)</option>
+                <option value="vwap">VWAP Strategy (Institutional)</option>
+                <option value="ichimoku">Ichimoku Cloud</option>
+                <option value="multi_strategy">Multi-Strategy Portfolio</option>
+              </optgroup>
             </select>
           </div>
 
@@ -139,7 +190,7 @@ function Backtest() {
           <h4 className="text-sm font-medium text-gray-300 mb-3">Strategy Parameters</h4>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            {strategyType === 'moving_average' ? (
+            {strategyType === 'moving_average' && (
               <>
                 <div>
                   <label className="block text-sm text-gray-400">Short Window</label>
@@ -175,7 +226,9 @@ function Backtest() {
                   </select>
                 </div>
               </>
-            ) : (
+            )}
+
+            {strategyType === 'rsi' && (
               <>
                 <div>
                   <label className="block text-sm text-gray-400">Period</label>
@@ -211,6 +264,295 @@ function Backtest() {
                   />
                 </div>
               </>
+            )}
+
+            {strategyType === 'macd' && (
+              <>
+                <div>
+                  <label className="block text-sm text-gray-400">Fast Period</label>
+                  <input
+                    type="number"
+                    value={parameters.fast_period}
+                    onChange={(e) =>
+                      setParameters({ ...parameters, fast_period: parseInt(e.target.value) })
+                    }
+                    className="mt-1 block w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400">Slow Period</label>
+                  <input
+                    type="number"
+                    value={parameters.slow_period}
+                    onChange={(e) =>
+                      setParameters({ ...parameters, slow_period: parseInt(e.target.value) })
+                    }
+                    className="mt-1 block w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400">Signal Period</label>
+                  <input
+                    type="number"
+                    value={parameters.signal_period}
+                    onChange={(e) =>
+                      setParameters({ ...parameters, signal_period: parseInt(e.target.value) })
+                    }
+                    className="mt-1 block w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </>
+            )}
+
+            {strategyType === 'bollinger_bands' && (
+              <>
+                <div>
+                  <label className="block text-sm text-gray-400">Period</label>
+                  <input
+                    type="number"
+                    value={parameters.period}
+                    onChange={(e) =>
+                      setParameters({ ...parameters, period: parseInt(e.target.value) })
+                    }
+                    className="mt-1 block w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400">Standard Deviations</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={parameters.num_std}
+                    onChange={(e) =>
+                      setParameters({ ...parameters, num_std: parseFloat(e.target.value) })
+                    }
+                    className="mt-1 block w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400">MA Type</label>
+                  <select
+                    value={parameters.ma_type}
+                    onChange={(e) => setParameters({ ...parameters, ma_type: e.target.value })}
+                    className="mt-1 block w-full pl-3 pr-10 py-2 bg-slate-700 border-slate-600 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md"
+                  >
+                    <option value="sma">SMA</option>
+                    <option value="ema">EMA</option>
+                  </select>
+                </div>
+              </>
+            )}
+
+            {strategyType === 'mean_reversion' && (
+              <>
+                <div>
+                  <label className="block text-sm text-gray-400">Lookback Period</label>
+                  <input
+                    type="number"
+                    value={parameters.lookback_period}
+                    onChange={(e) =>
+                      setParameters({ ...parameters, lookback_period: parseInt(e.target.value) })
+                    }
+                    className="mt-1 block w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400">Entry Threshold</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={parameters.entry_threshold}
+                    onChange={(e) =>
+                      setParameters({ ...parameters, entry_threshold: parseFloat(e.target.value) })
+                    }
+                    className="mt-1 block w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400">Exit Threshold</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={parameters.exit_threshold}
+                    onChange={(e) =>
+                      setParameters({ ...parameters, exit_threshold: parseFloat(e.target.value) })
+                    }
+                    className="mt-1 block w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </>
+            )}
+
+            {strategyType === 'turtle_trading' && (
+              <>
+                <div>
+                  <label className="block text-sm text-gray-400">Entry Period</label>
+                  <input
+                    type="number"
+                    value={parameters.entry_period}
+                    onChange={(e) =>
+                      setParameters({ ...parameters, entry_period: parseInt(e.target.value) })
+                    }
+                    className="mt-1 block w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400">Exit Period</label>
+                  <input
+                    type="number"
+                    value={parameters.exit_period}
+                    onChange={(e) =>
+                      setParameters({ ...parameters, exit_period: parseInt(e.target.value) })
+                    }
+                    className="mt-1 block w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400">ATR Period</label>
+                  <input
+                    type="number"
+                    value={parameters.atr_period}
+                    onChange={(e) =>
+                      setParameters({ ...parameters, atr_period: parseInt(e.target.value) })
+                    }
+                    className="mt-1 block w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </>
+            )}
+
+            {strategyType === 'pairs_trading' && (
+              <>
+                <div>
+                  <label className="block text-sm text-gray-400">Lookback Period</label>
+                  <input
+                    type="number"
+                    value={parameters.lookback_period}
+                    onChange={(e) =>
+                      setParameters({ ...parameters, lookback_period: parseInt(e.target.value) })
+                    }
+                    className="mt-1 block w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400">Entry Threshold</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={parameters.entry_threshold}
+                    onChange={(e) =>
+                      setParameters({ ...parameters, entry_threshold: parseFloat(e.target.value) })
+                    }
+                    className="mt-1 block w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400">Hedge Ratio Period</label>
+                  <input
+                    type="number"
+                    value={parameters.hedge_ratio_period}
+                    onChange={(e) =>
+                      setParameters({ ...parameters, hedge_ratio_period: parseInt(e.target.value) })
+                    }
+                    className="mt-1 block w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </>
+            )}
+
+            {strategyType === 'vwap' && (
+              <>
+                <div>
+                  <label className="block text-sm text-gray-400">Std Multiplier</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={parameters.std_multiplier}
+                    onChange={(e) =>
+                      setParameters({ ...parameters, std_multiplier: parseFloat(e.target.value) })
+                    }
+                    className="mt-1 block w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400">Lookback Period</label>
+                  <input
+                    type="number"
+                    value={parameters.lookback_period}
+                    onChange={(e) =>
+                      setParameters({ ...parameters, lookback_period: parseInt(e.target.value) })
+                    }
+                    className="mt-1 block w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <label className="flex items-center pb-2">
+                    <input
+                      type="checkbox"
+                      checked={parameters.use_bands}
+                      onChange={(e) => setParameters({ ...parameters, use_bands: e.target.checked })}
+                      className="rounded bg-slate-700 border-slate-600 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="ml-2 text-sm text-gray-400">Use VWAP Bands</span>
+                  </label>
+                </div>
+              </>
+            )}
+
+            {strategyType === 'ichimoku' && (
+              <>
+                <div>
+                  <label className="block text-sm text-gray-400">Tenkan Period</label>
+                  <input
+                    type="number"
+                    value={parameters.tenkan_period}
+                    onChange={(e) =>
+                      setParameters({ ...parameters, tenkan_period: parseInt(e.target.value) })
+                    }
+                    className="mt-1 block w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400">Kijun Period</label>
+                  <input
+                    type="number"
+                    value={parameters.kijun_period}
+                    onChange={(e) =>
+                      setParameters({ ...parameters, kijun_period: parseInt(e.target.value) })
+                    }
+                    className="mt-1 block w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400">Senkou Span B</label>
+                  <input
+                    type="number"
+                    value={parameters.senkou_span_b_period}
+                    onChange={(e) =>
+                      setParameters({ ...parameters, senkou_span_b_period: parseInt(e.target.value) })
+                    }
+                    className="mt-1 block w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </>
+            )}
+
+            {strategyType === 'multi_strategy' && (
+              <div className="col-span-3">
+                <label className="block text-sm text-gray-400">Voting Method</label>
+                <select
+                  value={parameters.voting_method}
+                  onChange={(e) => setParameters({ ...parameters, voting_method: e.target.value })}
+                  className="mt-1 block w-full pl-3 pr-10 py-2 bg-slate-700 border-slate-600 text-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md"
+                >
+                  <option value="weighted">Weighted Average</option>
+                  <option value="majority">Majority Vote</option>
+                  <option value="unanimous">Unanimous</option>
+                </select>
+                <div className="text-xs text-gray-500 mt-2">
+                  Combines MA, RSI, and MACD with weights [0.4, 0.3, 0.3]
+                </div>
+              </div>
             )}
           </div>
         </div>
