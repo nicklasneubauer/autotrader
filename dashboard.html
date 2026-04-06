@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AutoTrader – AI Daytrading Dashboard</title>
+<style>
+  :root {
+    --bg: #0d1117; --surface: #161b22; --border: #30363d;
+    --text: #e6edf3; --muted: #8b949e; --green: #3fb950;
+    --red: #f85149; --blue: #58a6ff; --yellow: #d29922;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'SF Mono', 'Fira Code', monospace; background: var(--bg); color: var(--text); padding: 16px; }
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+  .header h1 { font-size: 18px; }
+  .mode-badge { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
+  .mode-testnet { background: var(--yellow); color: #000; }
+  .mode-live { background: var(--red); color: #fff; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin-bottom: 12px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+  .card h2 { font-size: 13px; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px; }
+  .big-num { font-size: 32px; font-weight: bold; }
+  .positive { color: var(--green); }
+  .negative { color: var(--red); }
+  .neutral { color: var(--muted); }
+  .controls { display: flex; gap: 8px; margin-bottom: 12px; }
+  button { padding: 8px 20px; border: none; border-radius: 6px; font-family: inherit; font-size: 13px; font-weight: bold; cursor: pointer; transition: opacity 0.2s; }
+  button:hover { opacity: 0.85; }
+  .btn-start { background: var(--green); color: #000; }
+  .btn-stop { background: var(--red); color: #fff; }
+  .btn-close { background: var(--yellow); color: #000; }
+  .btn-disabled { opacity: 0.4; cursor: not-allowed; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { text-align: left; color: var(--muted); padding: 6px 8px; border-bottom: 1px solid var(--border); font-size: 11px; text-transform: uppercase; }
+  td { padding: 6px 8px; border-bottom: 1px solid var(--border); }
+  .decision-box { padding: 12px; border-radius: 6px; font-size: 13px; line-height: 1.6; }
+  .decision-buy { border-left: 3px solid var(--green); background: rgba(63,185,80,0.08); }
+  .decision-sell { border-left: 3px solid var(--red); background: rgba(248,81,73,0.08); }
+  .decision-hold { border-left: 3px solid var(--muted); background: rgba(139,148,158,0.08); }
+  .log-box { background: #0d1117; border: 1px solid var(--border); border-radius: 6px; padding: 10px; max-height: 300px; overflow-y: auto; font-size: 11px; color: var(--muted); line-height: 1.7; }
+  .log-entry { white-space: pre-wrap; word-break: break-all; }
+  .indicator-row { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px; }
+  .indicator { text-align: center; }
+  .indicator .label { font-size: 10px; color: var(--muted); text-transform: uppercase; }
+  .indicator .value { font-size: 18px; font-weight: bold; }
+  .pulse { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+  .pulse-on { background: var(--green); animation: pulse-anim 1.5s infinite; }
+  .pulse-off { background: var(--red); }
+  @keyframes pulse-anim { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>AutoTrader <span style="color:var(--muted)">AI Daytrading</span></h1>
+  <div>
+    <span class="pulse pulse-off" id="statusDot"></span>
+    <span id="statusText" style="font-size:12px">Offline</span>
+    <span class="mode-badge mode-testnet" id="modeBadge">TESTNET</span>
+  </div>
+</div>
+
+<div class="controls">
+  <button class="btn-start" onclick="apiCall('/api/start')">Start Trading</button>
+  <button class="btn-stop" onclick="apiCall('/api/stop')">Stop Trading</button>
+  <button class="btn-close" onclick="apiCall('/api/close-all')">Close All Trades</button>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <h2>Preis</h2>
+    <div class="big-num" id="price">-</div>
+    <div style="font-size:12px;color:var(--muted)" id="symbol">BTCUSDT</div>
+  </div>
+  <div class="card">
+    <h2>Equity</h2>
+    <div class="big-num" id="equity">-</div>
+    <div style="font-size:12px" id="pnl">PnL: -</div>
+  </div>
+  <div class="card">
+    <h2>Indikatoren</h2>
+    <div class="indicator-row">
+      <div class="indicator"><div class="label">RSI(14)</div><div class="value" id="rsi">-</div></div>
+      <div class="indicator"><div class="label">MACD</div><div class="value" id="macd">-</div></div>
+      <div class="indicator"><div class="label">Signal</div><div class="value" id="signal">-</div></div>
+      <div class="indicator"><div class="label">Vol</div><div class="value" id="volume">-</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <h2>Letzte KI-Entscheidung</h2>
+    <div id="decisionBox" class="decision-box decision-hold">Noch keine Entscheidung</div>
+    <div style="font-size:11px;color:var(--muted);margin-top:6px" id="decisionTime">-</div>
+  </div>
+  <div class="card">
+    <h2>Offene Trades (<span id="tradeCount">0</span>/3)</h2>
+    <table>
+      <thead><tr><th>Entry</th><th>Betrag</th><th>SL</th><th>TP</th><th>UPnL</th></tr></thead>
+      <tbody id="openTradesBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card" style="margin-top:12px">
+  <h2>Trade-Historie</h2>
+  <table>
+    <thead><tr><th>Zeit</th><th>Entry</th><th>Exit</th><th>Betrag</th><th>PnL</th><th>Grund</th></tr></thead>
+    <tbody id="closedTradesBody"></tbody>
+  </table>
+</div>
+
+<div class="card" style="margin-top:12px">
+  <h2>Log</h2>
+  <div class="log-box" id="logBox"></div>
+</div>
+
+<script>
+function $(id) { return document.getElementById(id); }
+
+function apiCall(url) {
+  fetch(url, { method: 'POST' }).then(r => r.json()).then(d => console.log(d));
+}
+
+function updateUI(s) {
+  if (!s) return;
+
+  $('price').textContent = s.currentPrice ? `$${s.currentPrice.toLocaleString()}` : '-';
+  $('symbol').textContent = s.symbol || 'BTCUSDT';
+  $('equity').textContent = `${s.equity} USDT`;
+
+  const pnlEl = $('pnl');
+  pnlEl.textContent = `PnL: ${s.pnl > 0 ? '+' : ''}${s.pnl} USDT`;
+  pnlEl.className = s.pnl > 0 ? 'positive' : s.pnl < 0 ? 'negative' : 'neutral';
+
+  // Indicators
+  $('rsi').textContent = s.indicators?.rsi ?? '-';
+  const rsiEl = $('rsi');
+  rsiEl.className = 'value ' + (s.indicators?.rsi > 70 ? 'negative' : s.indicators?.rsi < 30 ? 'positive' : '');
+
+  if (s.indicators?.macd) {
+    $('macd').textContent = s.indicators.macd.macd;
+    $('signal').textContent = s.indicators.macd.signal;
+  }
+  $('volume').textContent = s.indicators?.volume ?? '-';
+
+  // Status
+  const dot = $('statusDot');
+  const statusText = $('statusText');
+  if (s.isRunning) {
+    dot.className = 'pulse pulse-on';
+    statusText.textContent = 'Live';
+  } else {
+    dot.className = 'pulse pulse-off';
+    statusText.textContent = 'Gestoppt';
+  }
+
+  // Mode badge
+  const badge = $('modeBadge');
+  badge.textContent = s.tradingMode?.toUpperCase() || 'TESTNET';
+  badge.className = s.tradingMode === 'live' ? 'mode-badge mode-live' : 'mode-badge mode-testnet';
+
+  // Last decision
+  if (s.lastDecision) {
+    const d = s.lastDecision;
+    const box = $('decisionBox');
+    box.className = `decision-box decision-${d.action}`;
+    box.innerHTML = `<strong>${d.action.toUpperCase()}</strong>`;
+    if (d.action === 'buy') {
+      box.innerHTML += ` | ${d.amount} USDT | SL: $${d.stop_loss} | TP: $${d.take_profit || '-'}`;
+    }
+    box.innerHTML += `<br><span style="color:var(--muted)">${d.reasoning}</span>`;
+    $('decisionTime').textContent = s.lastDecisionTime ? new Date(s.lastDecisionTime).toLocaleString('de-DE') : '';
+  }
+
+  // Open trades
+  $('tradeCount').textContent = s.openTrades?.length || 0;
+  const otb = $('openTradesBody');
+  otb.innerHTML = '';
+  (s.openTrades || []).forEach(t => {
+    const upnl = ((s.currentPrice - t.entryPrice) * t.amount / t.entryPrice).toFixed(2);
+    const cls = upnl > 0 ? 'positive' : upnl < 0 ? 'negative' : '';
+    otb.innerHTML += `<tr>
+      <td>$${t.entryPrice}</td><td>${t.amount} USDT</td><td>$${t.stopLoss}</td>
+      <td>${t.takeProfit ? '$' + t.takeProfit : '-'}</td>
+      <td class="${cls}">${upnl > 0 ? '+' : ''}${upnl}</td>
+    </tr>`;
+  });
+  if (!s.openTrades?.length) otb.innerHTML = '<tr><td colspan="5" style="color:var(--muted)">Keine offenen Trades</td></tr>';
+
+  // Closed trades
+  const ctb = $('closedTradesBody');
+  ctb.innerHTML = '';
+  (s.closedTrades || []).reverse().forEach(t => {
+    const cls = t.pnl > 0 ? 'positive' : t.pnl < 0 ? 'negative' : '';
+    ctb.innerHTML += `<tr>
+      <td>${new Date(t.closedAt).toLocaleString('de-DE')}</td>
+      <td>$${t.entryPrice}</td><td>$${t.exitPrice}</td><td>${t.amount}</td>
+      <td class="${cls}">${t.pnl > 0 ? '+' : ''}${t.pnl}</td>
+      <td>${t.closeReason}</td>
+    </tr>`;
+  });
+  if (!s.closedTrades?.length) ctb.innerHTML = '<tr><td colspan="6" style="color:var(--muted)">Noch keine abgeschlossenen Trades</td></tr>';
+
+  // Logs
+  if (s.logs) {
+    const logBox = $('logBox');
+    logBox.innerHTML = s.logs.map(l => `<div class="log-entry">${escapeHtml(l)}</div>`).join('');
+    logBox.scrollTop = logBox.scrollHeight;
+  }
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// SSE connection
+function connectSSE() {
+  const es = new EventSource('/events');
+  es.onmessage = (e) => {
+    try {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'state') updateUI(msg.data);
+      if (msg.type === 'log' && $('logBox')) {
+        const logBox = $('logBox');
+        const div = document.createElement('div');
+        div.className = 'log-entry';
+        div.textContent = msg.data;
+        logBox.appendChild(div);
+        logBox.scrollTop = logBox.scrollHeight;
+      }
+    } catch (err) {}
+  };
+  es.onerror = () => {
+    $('statusDot').className = 'pulse pulse-off';
+    $('statusText').textContent = 'Verbindung verloren...';
+    setTimeout(connectSSE, 3000);
+  };
+}
+
+// Initial fetch + SSE
+fetch('/api/state').then(r => r.json()).then(updateUI).catch(() => {});
+connectSSE();
+</script>
+</body>
+</html>
